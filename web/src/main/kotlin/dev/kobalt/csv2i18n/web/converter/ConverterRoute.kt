@@ -62,13 +62,14 @@ fun Route.converterRoute() {
             )
         }.getOrElse {
             call.respondText(
-                application.converter.getFailurePageContent().replace(
+                text = application.converter.getFailurePageContent().replace(
                     "\$cause\$", when (it) {
                         is InputStreamSizeLimitReachedException -> "Submitted content is bigger than size limit (500 kB)."
                         else -> "Conversion was not successful."
                     }
                 ),
-                ContentType.Text.Html
+                contentType = ContentType.Text.Html,
+                status = HttpStatusCode.InternalServerError
             )
         }
     }

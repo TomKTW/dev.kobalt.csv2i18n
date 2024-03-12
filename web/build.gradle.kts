@@ -10,7 +10,6 @@ repositories {
     mavenCentral()
 }
 
-fun kobalt(module: String, version: String) = "dev.kobalt:$module:$version"
 fun ktor(module: String, version: String) = "io.ktor:ktor-$module:$version"
 fun exposed(module: String, version: String) = "org.jetbrains.exposed:exposed-$module:$version"
 fun general(module: String, version: String) = "$module:$version"

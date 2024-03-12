@@ -118,11 +118,14 @@ textarea {
 	height: 48px;
 }
 
-input[type='submit'] {
+input[type='submit'],
+input[type='button'] {
 	background-color: #eeeeee;
+    padding: 8px;
 }
 
-input[type='submit']:hover {
+input[type='submit']:hover,
+input[type='button']:hover {
 	background-color: #cccccc;
 }
 
@@ -184,11 +187,13 @@ main .message p {
 		background-color: #111111;
 	}
 
-	input[type='submit'] {
+	input[type='submit'],
+	input[type='button'] {
 		background-color: #111111;
 	}
 
-	input[type='submit']:hover {
+	input[type='submit']:hover,
+	input[type='button']:hover {
 		background-color: #333333;
 	}
 }
