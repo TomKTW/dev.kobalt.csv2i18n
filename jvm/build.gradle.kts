@@ -1,6 +1,6 @@
 plugins {
-    kotlin("jvm") version "1.6.0"
-    id("com.github.johnrengelman.shadow") version "6.0.0"
+    kotlin("jvm") version "1.9.22"
+    id("com.github.johnrengelman.shadow") version "8.1.1"
 }
 
 group = "dev.kobalt"
@@ -10,11 +10,6 @@ repositories {
     mavenCentral()
 }
 
-tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile> {
-    kotlinOptions.jvmTarget = "1.8"
-}
-
-fun kobalt(module: String, version: String) = "dev.kobalt:$module:$version"
 fun ktor(module: String, version: String) = "io.ktor:ktor-$module:$version"
 fun exposed(module: String, version: String) = "org.jetbrains.exposed:exposed-$module:$version"
 fun general(module: String, version: String) = "$module:$version"
@@ -25,16 +20,20 @@ fun DependencyHandler.csvParser() {
     implementation(general("com.github.doyaaaaaken:kotlin-csv-jvm", "0.7.3"))
 }
 
+fun DependencyHandler.commandLineInterface() {
+    implementation("org.jetbrains.kotlinx:kotlinx-cli:0.3.6")
+}
+
 fun DependencyHandler.standardLibrary() {
-    implementation("org.jetbrains.kotlinx:kotlinx-cli:0.3.3")
-    implementation(kotlin("stdlib", "1.5.21"))
+    implementation(kotlin("stdlib", "1.9.22"))
 }
 
 fun DependencyHandler.logger() {
-    implementation(general("ch.qos.logback:logback-classic", "1.2.3"))
+    implementation(general("org.slf4j:slf4j-simple", "2.0.11"))
 }
 
 dependencies {
+    commandLineInterface()
     standardLibrary()
     csvParser()
     logger()
