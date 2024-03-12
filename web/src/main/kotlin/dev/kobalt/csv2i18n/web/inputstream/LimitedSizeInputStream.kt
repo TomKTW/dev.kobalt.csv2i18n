@@ -16,7 +16,7 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-package dev.kobalt.csv2i18n.web.html
+package dev.kobalt.csv2i18n.web.inputstream
 
 import java.io.Closeable
 import java.io.FilterInputStream
@@ -30,7 +30,7 @@ class LimitedSizeInputStream(
     private var currentSize: Long = 0
 
     private fun checkSize() {
-        if (currentSize > maxSize) throw Exception("Input stream size limit ($maxSize bytes) reached: $currentSize bytes.")
+        if (currentSize > maxSize) throw InputStreamSizeLimitReachedException(maxSize, currentSize)
     }
 
     override fun read(): Int {

@@ -18,13 +18,16 @@ fun kotlinx(module: String, version: String) = "org.jetbrains.kotlinx:kotlinx-$m
 fun kotlinw(module: String, version: String) = "org.jetbrains.kotlin-wrappers:kotlin-$module:$version"
 
 fun DependencyHandler.httpServer() {
-    implementation(ktor("server-core", "1.6.7"))
-    implementation(ktor("server-cio", "1.6.7"))
-    implementation(ktor("html-builder", "1.6.7"))
-}
-
-fun DependencyHandler.markdown() {
-    implementation(general("com.vladsch.flexmark:flexmark", "0.62.2"))
+    implementation(ktor("server-cio", "2.3.7"))
+    implementation(ktor("server-core", "2.3.7"))
+    implementation(ktor("server-sessions", "2.3.7"))
+    implementation(ktor("server-forwarded-header", "2.3.7"))
+    implementation(ktor("server-default-headers", "2.3.7"))
+    implementation(ktor("server-caching-headers", "2.3.7"))
+    implementation(ktor("server-call-logging", "2.3.7"))
+    implementation(ktor("server-compression", "2.3.7"))
+    implementation(ktor("server-status-pages", "2.3.7"))
+    implementation(ktor("server-html-builder", "2.3.7"))
 }
 
 fun DependencyHandler.commandLineInterface() {
@@ -59,12 +62,11 @@ dependencies {
     htmlDsl()
     cssDsl()
     logger()
-    markdown()
 }
 
 tasks {
     named<com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar>("shadowJar") {
-        archiveFileName.set("server.jar")
+        archiveFileName.set("csv2i18n.web.jar")
         mergeServiceFiles()
         manifest {
             attributes("Main-Class" to "dev.kobalt.csv2i18n.web.MainKt")

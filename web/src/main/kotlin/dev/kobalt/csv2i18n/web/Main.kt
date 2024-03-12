@@ -18,59 +18,98 @@
 
 package dev.kobalt.csv2i18n.web
 
-import dev.kobalt.csv2i18n.web.convert.ConvertRepository
-import dev.kobalt.csv2i18n.web.convert.convertRoute
+import dev.kobalt.csv2i18n.web.converter.ConverterPlugin
+import dev.kobalt.csv2i18n.web.converter.converter
+import dev.kobalt.csv2i18n.web.converter.converterRoute
 import dev.kobalt.csv2i18n.web.extension.ifLet
-import dev.kobalt.csv2i18n.web.status.exceptionStatus
-import dev.kobalt.csv2i18n.web.status.notFoundStatus
-import io.ktor.application.*
-import io.ktor.features.*
-import io.ktor.routing.*
+import io.ktor.http.*
+import io.ktor.http.content.*
+import io.ktor.server.application.*
 import io.ktor.server.cio.*
 import io.ktor.server.engine.*
+import io.ktor.server.plugins.cachingheaders.*
+import io.ktor.server.plugins.callloging.*
+import io.ktor.server.plugins.compression.*
+import io.ktor.server.plugins.defaultheaders.*
+import io.ktor.server.plugins.forwardedheaders.*
+import io.ktor.server.plugins.statuspages.*
+import io.ktor.server.response.*
+import io.ktor.server.routing.*
 import kotlinx.cli.ArgParser
 import kotlinx.cli.ArgType
-import org.slf4j.event.Level
+import kotlinx.coroutines.*
 import java.util.concurrent.TimeUnit
 import kotlin.concurrent.thread
 
-fun main(args: Array<String>) {
-    val parser = ArgParser("server")
-    val jarPath by parser.option(ArgType.String, "jarPath", null, null)
-    val httpServerPort by parser.option(ArgType.Int, "httpServerPort", null, null)
-    val httpServerHost by parser.option(ArgType.String, "httpServerHost", null, null)
+suspend fun main(args: Array<String>) {
+    // Parse given arguments.
+    val parser = ArgParser(
+        programName = "csv2i18n"
+    )
+    val jarPath by parser.option(
+        type = ArgType.String,
+        fullName = "jarPath",
+        shortName = "jar",
+        description = "Path to converter JAR file"
+    )
+    val httpServerPort by parser.option(
+        type = ArgType.Int,
+        fullName = "httpServerPort",
+        shortName = "hsp",
+        description = "Port to host the server at"
+    )
+    val httpServerHost by parser.option(
+        type = ArgType.String,
+        fullName = "httpServerHost",
+        shortName = "hsh",
+        description = "Host value (127.0.0.1 for private, 0.0.0.0 for public access)"
+    )
     parser.parse(args)
-    ConvertRepository.apply {
+    ifLet(jarPath, httpServerPort, httpServerHost) { path, port, host ->
+        CoroutineScope(Dispatchers.Main).async(
+            context = Dispatchers.IO + NonCancellable,
+            start = CoroutineStart.LAZY
+        ) {
+            setupServer(path, port, host).also {
+                Runtime.getRuntime().addShutdownHook(thread(start = false) {
+                    it.stop(0, 10, TimeUnit.SECONDS)
+                })
+            }.also {
+                it.start(true)
+            }
+        }.await()
+    }
+}
+
+/** Returns an instance of server with configuration from given entity .*/
+fun setupServer(jarPath: String, port: Int, host: String) = embeddedServer(CIO, port, host) {
+    install(ForwardedHeaders)
+    install(DefaultHeaders) {
+        // TODO: Check this later.
+        // header("Content-Security-Policy", "frame-ancestor 'csv2i18n.kobalt.dev'" )
+    }
+    install(CallLogging)
+    install(Compression)
+    install(ConverterPlugin) {
         this.jarPath = jarPath
     }
-    ifLet(httpServerPort, httpServerHost) { port, host ->
-        val server = embeddedServer(CIO, port, host) {
-            install(XForwardedHeaderSupport)
-            install(DefaultHeaders) {
-                //header("X-Frame-Options", "SAMEORIGIN")
-                header("Content-Security-Policy", "frame-ancestors http://localhost:20020/")
-                header("X-Content-Type-Options", "nosniff")
-                header(
-                    "Permissions-Policy",
-                    "geolocation=(), midi=(), sync-xhr=(), microphone=(), camera=(), magnetometer=(), gyroscope=(), fullscreen=(), payment=()"
-                )
-                header("Referrer-Policy", "strict-origin")
-                header("Strict-Transport-Security", "max-age=2592000")
-            }
-            install(CachingHeaders)
-            install(CallLogging) { level = Level.INFO }
-            install(Compression) { gzip() }
-            install(StatusPages) {
-                exceptionStatus()
-                notFoundStatus()
-            }
-            install(Routing) {
-                convertRoute()
+    install(IgnoreTrailingSlash)
+    install(CachingHeaders) {
+        options { _, _ -> CachingOptions(CacheControl.MaxAge(maxAgeSeconds = 0)) }
+    }
+    install(StatusPages)
+    install(Routing) {
+        route("style.css") {
+            get {
+                call.respondText(application.converter.getStyleCssContent(), ContentType.Text.CSS)
             }
         }
-        Runtime.getRuntime().addShutdownHook(thread(start = false) {
-            server.stop(0, 10, TimeUnit.SECONDS)
-        })
-        server.start(true)
+        converterRoute()
     }
+}.also {
+    Runtime.getRuntime().addShutdownHook(thread(start = false) {
+        it.stop(0, 10, TimeUnit.SECONDS)
+    })
+}.also {
+    it.start(true)
 }

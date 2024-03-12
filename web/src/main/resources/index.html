@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>CSV to Localization Converter</title>
+    <meta content="Convert your CSV file with strings to Android XML or iOS strings localization file."
+          name="description">
+    <meta content="text/html;charset=UTF-8" http-equiv="Content-Type">
+    <meta content="width=device-width, initial-scale=1.0, shrink-to-fit=no" name="viewport">
+    <link href="./style.css" rel="stylesheet">
+</head>
+<body>
+<main>
+    <div class="tab-layout">
+        <input checked="checked" id="tab-first" name="tab" type="radio"><label class="tab tab-first" for="tab-first">File</label><input
+            id="tab-second" name="tab" type="radio"><label class="tab tab-second" for="tab-second">Text</label>
+        <div class="tab-content-first">
+            <form enctype="multipart/form-data" method="post" name="messagebox">
+                <label for="file-input">Input</label>
+                <div class="input-wrapper">
+                    <input id="file-input" name="input" type="file">
+                </div>
+                <input name="submit" type="submit" value="Convert">
+            </form>
+        </div>
+        <div class="tab-content-second">
+            <form enctype="multipart/form-data" method="post" name="messagebox">
+                <label for="text-input">Input</label>
+                <div class="input-wrapper">
+                    <textarea id="text-input" name="input"
+                              placeholder="Example:&#10;xx,en,hr&#10;k1,e1,h1&#10;k2,e2,h2"></textarea>
+                </div>
+                <input name="submit" type="submit" value="Convert">
+            </form>
+        </div>
+    </div>
+</main>
+</body>
+</html>
