@@ -20,8 +20,9 @@ package dev.kobalt.csv2i18n.web
 
 import dev.kobalt.csv2i18n.web.converter.ConverterPlugin
 import dev.kobalt.csv2i18n.web.converter.converter
-import dev.kobalt.csv2i18n.web.converter.converterRoute
 import dev.kobalt.csv2i18n.web.extension.ifLet
+import dev.kobalt.csv2i18n.web.inputstream.InputStreamSizeLimitReachedException
+import dev.kobalt.csv2i18n.web.inputstream.LimitedSizeInputStream
 import io.ktor.http.*
 import io.ktor.http.content.*
 import io.ktor.server.application.*
@@ -33,11 +34,13 @@ import io.ktor.server.plugins.compression.*
 import io.ktor.server.plugins.defaultheaders.*
 import io.ktor.server.plugins.forwardedheaders.*
 import io.ktor.server.plugins.statuspages.*
+import io.ktor.server.request.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
 import kotlinx.cli.ArgParser
 import kotlinx.cli.ArgType
 import kotlinx.coroutines.*
+import java.io.ByteArrayOutputStream
 import java.util.concurrent.TimeUnit
 import kotlin.concurrent.thread
 
@@ -84,10 +87,7 @@ suspend fun main(args: Array<String>) {
 /** Returns an instance of server with configuration from given entity .*/
 fun setupServer(jarPath: String, port: Int, host: String) = embeddedServer(CIO, port, host) {
     install(ForwardedHeaders)
-    install(DefaultHeaders) {
-        // TODO: Check this later.
-        // header("Content-Security-Policy", "frame-ancestor 'csv2i18n.kobalt.dev'" )
-    }
+    install(DefaultHeaders)
     install(CallLogging)
     install(Compression)
     install(ConverterPlugin) {
@@ -99,12 +99,47 @@ fun setupServer(jarPath: String, port: Int, host: String) = embeddedServer(CIO, 
     }
     install(StatusPages)
     install(Routing) {
-        route("style.css") {
-            get {
-                call.respondText(application.converter.getStyleCssContent(), ContentType.Text.CSS)
+        post {
+            runCatching {
+                // Extract the data.
+                val data = when (val part = call.receiveMultipart().readAllParts().find { it.name == "input" }) {
+                    is PartData.FileItem -> LimitedSizeInputStream(part.streamProvider(), 500 * 1024).readBytes()
+                        .decodeToString()
+
+                    is PartData.FormItem -> part.value.takeIf { it.length < 500 * 1024 } ?: throw Exception()
+                    else -> throw Exception()
+                }
+                // Convert the data.
+                val bytes = ByteArrayOutputStream().use {
+                    application.converter.submit(data, it)
+                    it.toByteArray()
+                }
+                // Apply header after conversion to prevent downloading failed page.
+                call.response.header(
+                    HttpHeaders.ContentDisposition,
+                    ContentDisposition.Attachment.withParameter(
+                        ContentDisposition.Parameters.FileName, "output.zip"
+                    ).toString()
+                )
+                // Respond with zipped output stream file.
+                call.respondBytes(
+                    contentType = ContentType.Application.Zip,
+                    status = HttpStatusCode.OK,
+                    bytes = bytes
+                )
+            }.getOrElse {
+                call.respondText(
+                    text = application.converter.getMessagePageContent().replace("\$title\$", "Failure").replace(
+                        "\$description\$", when (it) {
+                            is InputStreamSizeLimitReachedException -> "Submitted content is bigger than size limit (500 kB)."
+                            else -> "Conversion was not successful."
+                        }
+                    ),
+                    contentType = ContentType.Text.Html,
+                    status = HttpStatusCode.InternalServerError
+                )
             }
         }
-        converterRoute()
     }
 }.also {
     Runtime.getRuntime().addShutdownHook(thread(start = false) {

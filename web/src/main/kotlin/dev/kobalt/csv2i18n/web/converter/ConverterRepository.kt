@@ -69,25 +69,17 @@ class ConverterRepository(
         }
     }
 
-    fun getInputStreamFromResources(path: String): InputStream? =
+    private fun getInputStreamFromResources(path: String): InputStream? =
         this::class.java.classLoader.getResourceAsStream(path)
 
-    fun getBytesFromResources(path: String): ByteArray? =
+    private fun getBytesFromResources(path: String): ByteArray? =
         getInputStreamFromResources(path)?.use { it.readBytes() }
 
-    fun getTextFromResources(path: String): String? =
+    private fun getTextFromResources(path: String): String? =
         getBytesFromResources(path)?.decodeToString()
 
-    fun getIndexPageContent(): String {
-        return getTextFromResources("index.html")!!
-    }
-
-    fun getFailurePageContent(): String {
-        return getTextFromResources("failure.html")!!
-    }
-
-    fun getStyleCssContent(): String {
-        return getTextFromResources("style.css")!!
+    fun getMessagePageContent(): String {
+        return getTextFromResources("message.html")!!
     }
 
 }
