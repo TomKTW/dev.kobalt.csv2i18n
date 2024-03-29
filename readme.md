@@ -1,6 +1,6 @@
 # CSV to Localization Converter
 
-Make localized strings for Android and iOS from CSV data.
+Convert CSV formatted text translation strings into Android or iOS compatible formats.
 
 ---
 
