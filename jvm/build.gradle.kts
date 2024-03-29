@@ -1,6 +1,6 @@
 plugins {
-    kotlin("jvm") version "1.9.22"
-    id("com.github.johnrengelman.shadow") version "8.1.1"
+    kotlin("jvm")
+    id("com.github.johnrengelman.shadow")
 }
 
 group = "dev.kobalt"
@@ -41,7 +41,7 @@ dependencies {
 
 tasks {
     named<com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar>("shadowJar") {
-        archiveFileName.set("csv2i18n.jar")
+        archiveFileName.set("csv2i18n.jvm.jar")
         mergeServiceFiles()
         manifest {
             attributes("Main-Class" to "dev.kobalt.csv2i18n.jvm.MainKt")
